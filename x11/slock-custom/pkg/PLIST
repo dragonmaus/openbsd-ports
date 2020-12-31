@@ -1,0 +1,7 @@
+@comment $OpenBSD: PLIST,v$
+@mode g+s
+@group auth
+@bin bin/slock
+@mode
+@group
+@man man/man1/slock.1

@@ -1,0 +1,147 @@
+$OpenBSD$
+
+Index: slock.c
+--- slock.c.orig
++++ slock.c
+@@ -13,17 +13,25 @@
+ #include <stdio.h>
+ #include <string.h>
+ #include <unistd.h>
++#include <time.h>
+ #include <sys/types.h>
+ #include <X11/extensions/Xrandr.h>
+ #include <X11/keysym.h>
+ #include <X11/Xlib.h>
+ #include <X11/Xutil.h>
+ 
++#if HAVE_BSD_AUTH
++#include <login_cap.h>
++#include <bsd_auth.h>
++#endif
++
+ #include "arg.h"
+ #include "util.h"
+ 
+ char *argv0;
+ 
++static time_t locktime;
++
+ enum {
+ 	INIT,
+ 	INPUT,
+@@ -83,6 +91,7 @@ dontkillme(void)
+ }
+ #endif
+ 
++#ifndef HAVE_BSD_AUTH
+ static const char *
+ gethash(void)
+ {
+@@ -123,13 +132,21 @@ gethash(void)
+ 
+ 	return hash;
+ }
++#endif /* HAVE_BSD_AUTH */
+ 
+ static void
++#ifdef HAVE_BSD_AUTH
++readpw(Display *dpy, struct xrandr *rr, struct lock **locks, int nscreens)
++#else
+ readpw(Display *dpy, struct xrandr *rr, struct lock **locks, int nscreens,
+        const char *hash)
++#endif
+ {
+ 	XRRScreenChangeNotifyEvent *rre;
+-	char buf[32], passwd[256], *inputhash;
++	char buf[32], passwd[256];
++#ifndef HAVE_BSD_AUTH
++	char *inputhash;
++#endif
+ 	int num, screen, running, failure, oldc;
+ 	unsigned int len, color;
+ 	KeySym ksym;
+@@ -141,6 +158,7 @@ readpw(Display *dpy, struct xrandr *rr, struct lock **
+ 	oldc = INIT;
+ 
+ 	while (running && !XNextEvent(dpy, &ev)) {
++		running = !((time(NULL) - locktime < timetocancel) && (ev.type == MotionNotify));
+ 		if (ev.type == KeyPress) {
+ 			explicit_bzero(&buf, sizeof(buf));
+ 			num = XLookupString(&ev.xkey, buf, sizeof(buf), &ksym, 0);
+@@ -160,10 +178,14 @@ readpw(Display *dpy, struct xrandr *rr, struct lock **
+ 			case XK_Return:
+ 				passwd[len] = '\0';
+ 				errno = 0;
++#ifdef HAVE_BSD_AUTH
++				running = !auth_userokay(getlogin(), NULL, "auth-slock", passwd);
++#else
+ 				if (!(inputhash = crypt(passwd, hash)))
+ 					fprintf(stderr, "slock: crypt: %s\n", strerror(errno));
+ 				else
+ 					running = !!strcmp(inputhash, hash);
++#endif
+ 				if (running) {
+ 					XBell(dpy, 100);
+ 					failure = 1;
+@@ -268,6 +290,7 @@ lockscreen(Display *dpy, struct xrandr *rr, int screen
+ 				XRRSelectInput(dpy, lock->win, RRScreenChangeNotifyMask);
+ 
+ 			XSelectInput(dpy, lock->root, SubstructureNotifyMask);
++			locktime = time(NULL);
+ 			return lock;
+ 		}
+ 
+@@ -303,7 +326,9 @@ main(int argc, char **argv) {
+ 	struct group *grp;
+ 	uid_t duid;
+ 	gid_t dgid;
++#ifndef HAVE_BSD_AUTH
+ 	const char *hash;
++#endif
+ 	Display *dpy;
+ 	int s, nlocks, nscreens;
+ 
+@@ -331,14 +356,23 @@ main(int argc, char **argv) {
+ 	dontkillme();
+ #endif
+ 
++#ifndef HAVE_BSD_AUTH
+ 	hash = gethash();
+ 	errno = 0;
+ 	if (!crypt("", hash))
+ 		die("slock: crypt: %s\n", strerror(errno));
++#endif
+ 
+ 	if (!(dpy = XOpenDisplay(NULL)))
+ 		die("slock: cannot open display\n");
+ 
++/*
++ * don't drop groups for bsd-auth, slock runs as the user's normal
++ * uid, and requires gid auth from the setgid bit. (without bsd-auth
++ * slock needs to start with uid root or gid _shadow to read spwd.db,
++ * and is unable to use non-password methods)
++ */
++#ifndef HAVE_BSD_AUTH
+ 	/* drop privileges */
+ 	if (setgroups(0, NULL) < 0)
+ 		die("slock: setgroups: %s\n", strerror(errno));
+@@ -346,6 +380,7 @@ main(int argc, char **argv) {
+ 		die("slock: setgid: %s\n", strerror(errno));
+ 	if (setuid(duid) < 0)
+ 		die("slock: setuid: %s\n", strerror(errno));
++#endif
+ 
+ 	/* check for Xrandr support */
+ 	rr.active = XRRQueryExtension(dpy, &rr.evbase, &rr.errbase);
+@@ -381,7 +416,11 @@ main(int argc, char **argv) {
+ 	}
+ 
+ 	/* everything is now blank. Wait for the correct password */
++#ifdef HAVE_BSD_AUTH
++	readpw(dpy, &rr, locks, nscreens);
++#else
+ 	readpw(dpy, &rr, locks, nscreens, hash);
++#endif
+ 
+ 	return 0;
+ }

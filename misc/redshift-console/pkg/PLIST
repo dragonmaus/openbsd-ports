@@ -1,0 +1,3 @@
+@comment $OpenBSD: PLIST,v$
+@bin bin/redshift
+@man man/man1/redshift.1
