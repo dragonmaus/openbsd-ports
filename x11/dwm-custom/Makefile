@@ -1,30 +1,30 @@
 # $OpenBSD: Makefile,v 1.36 2020/06/01 20:35:35 jung Exp $
 
-COMMENT=		dynamic window manager
+COMMENT =		dynamic window manager
 
-V=			6.2
-PKGNAME=		dwm-custom-${V}
-DISTNAME=		dwm-${V}
+V =			6.2
+PKGNAME =		dwm-custom-${V}
+DISTNAME =		dwm-${V}
 
-CATEGORIES=		x11
+CATEGORIES =		x11
 
-HOMEPAGE=		https://dwm.suckless.org/
+HOMEPAGE =		https://dwm.suckless.org/
 
-MAINTAINER=		Joerg Jung <jung@openbsd.org>
+MAINTAINER =		Joerg Jung <jung@openbsd.org>
 
 # MIT/X
-PERMIT_PACKAGE=		Yes
+PERMIT_PACKAGE =	Yes
 
 # uses pledge()
-WANTLIB=		X11 Xinerama Xft c fontconfig
+WANTLIB =		X11 Xinerama Xft c fontconfig
 
-MASTER_SITES=		https://dl.suckless.org/dwm/
+MASTER_SITES =		https://dl.suckless.org/dwm/
 
-MAKE_ENV=		LDFLAGS="${LDFLAGS}" \
+MAKE_ENV =		LDFLAGS="${LDFLAGS}" \
 			X11INC=${X11BASE}/include \
 			X11LIB=${X11BASE}/lib
 
-NO_TEST=		Yes
+NO_TEST =		Yes
 
 do-install:
 	${INSTALL_PROGRAM} ${WRKBUILD}/dwm ${PREFIX}/bin/

@@ -1,30 +1,30 @@
 # $OpenBSD: Makefile,v 1.10 2020/07/17 08:36:04 tb Exp $
 
-ONLY_FOR_ARCHS=		${APM_ARCHS}
+ONLY_FOR_ARCHS =	${APM_ARCHS}
 
-COMMENT=		dwm status bar statistics
+COMMENT =		dwm status bar statistics
 
-V=			0.7
-PKGNAME=		dstat-custom-${V}
-DISTNAME=		dstat-${V}
+V =			0.7
+PKGNAME =		dstat-custom-${V}
+DISTNAME =		dstat-${V}
 
-CATEGORIES=		x11 sysutils
+CATEGORIES =		x11 sysutils
 
-HOMEPAGE=		https://www.umaxx.net/
+HOMEPAGE =		https://www.umaxx.net/
 
-MAINTAINER=		Joerg Jung <jung@openbsd.org>
+MAINTAINER =		Joerg Jung <jung@openbsd.org>
 
 # ISC
-PERMIT_PACKAGE=		Yes
+PERMIT_PACKAGE =	Yes
 
-WANTLIB=		X11 c util
+WANTLIB =		X11 c util
 
-MASTER_SITES=		${HOMEPAGE}/dl/
+MASTER_SITES =		${HOMEPAGE}/dl/
 
-MAKE_FLAGS=		CC="${CC}"
-MAKE_ENV=		LDFLAGS="${LDFLAGS}"
-FAKE_FLAGS=		DESTDIR=""
+MAKE_FLAGS =		CC="${CC}"
+MAKE_ENV =		LDFLAGS="${LDFLAGS}"
+FAKE_FLAGS =		DESTDIR=""
 
-NO_TEST=		Yes
+NO_TEST =		Yes
 
 .include <bsd.port.mk>
