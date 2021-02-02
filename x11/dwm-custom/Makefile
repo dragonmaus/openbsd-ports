@@ -5,6 +5,7 @@ COMMENT =		dynamic window manager
 V =			6.2
 PKGNAME =		dwm-custom-${V}
 DISTNAME =		dwm-${V}
+REVISION =		0
 
 CATEGORIES =		x11
 
